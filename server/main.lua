@@ -581,162 +581,179 @@ RegisterTunnel.useItem = function(slot, amount)
                     
 
                     elseif item == "lockpick" then
-                        local plate,mName,mNet,mPortaMalas,mPrice,mLock,mModel = vRPclient.ModelName(source, 7)
-                        local plateUser = vRP.getUserByRegistration(plate)
-                        local plyCoords = GetEntityCoords(GetPlayerPed(source))
-                        local x,y,z = plyCoords[1],plyCoords[2],plyCoords[3]
-                        if plateUser then
-                            if mLock then
-                                if vRP.tryGetInventoryItem(user_id, "lockpick", 1, true, slot) then
-                                    TriggerClientEvent('closeInventory', source)
-                                    Wait(500)
-                                    vTunnel._startAnimHotwired(source)
+  
+                       
+                       
+                        -- Garantindo que o evento "receiveVehicleInfo" só seja registrado uma vez
+                         if not alreadyRegistered then
+                            print(" 1 >>>>>>>>>>>>>")
+                            
+                             RegisterNetEvent("receiveVehicleInfo")
+                             AddEventHandler("receiveVehicleInfo", function(plate, model, netId, locked)
+
+                                 local user_id = vRP.getUserId(source)
+
+                                 print("UserId: ",user_id)
+
+                                 if not user_id then return end
+
+                                 print(" 2 >>>>>>>>>>>>>")
+                                 local plyCoords = GetEntityCoords(GetPlayerPed(source))
+                                 local x, y, z = plyCoords[1], plyCoords[2], plyCoords[3]
+ 
+                                 print("🔄 [SERVER] Dados recebidos do cliente:")
+                                 print("Placa:", plate)
+                                 print("Modelo:", model)
+                                 print("Network ID:", netId)
+                                 print("Está trancado:", locked)
+ 
+                                 -- Verifica se temos um veículo válido
+                                 if not plate or not netId then
+                                     print("❌ Nenhum veículo encontrado para destrancar.")
+                                     TriggerClientEvent("Notify", source, "negado", "Nenhum veículo encontrado por perto.", 6000)
+                                     return
+                                 end
+ 
+                                 local plateUser = vRP.getUserByRegistration(plate)
+                                 print("📝 Buscando dono do veículo no banco de dados para a placa:", plate)
+ 
+                                 if plateUser then
+                                     print("✔ Dono do veículo encontrado:", plateUser)
+ 
+                                     if locked == 1 then
+                                         TriggerClientEvent("Notify", source, "negado", "O veículo já está destrancado.", 6000)
+                                         return
+                                     end
+ 
+                                     -- Inicia a animação de arrombamento
+                                     vTunnel._startAnimHotwired(source)
+                                     vTunnel.blockButtons(source, true)
+ 
+                            
+                           
+                                     if vRP.tryGetInventoryItem(user_id, "lockpick", 1, true, slot) then
+                                         TriggerClientEvent('closeInventory', source)
+                                         Wait(500)
+ 
+                                         vTunnel._startAnimHotwired(source)
+                                         vTunnel.blockButtons(source, true)
+ 
+                                         local finished = vRPclient.taskBar(source, 2500, math.random(10, 15))
+                                         if finished then
+                                             finished = vRPclient.taskBar(source, 2500, math.random(10, 15))
+                                             if finished then
+                                                 finished = vRPclient.taskBar(source, 1500, math.random(7, 15))
+                                                 if finished then
+                                                     finished = vRPclient.taskBar(source, 1000, math.random(7, 15))
+ 
+ 
+                                                     if finished then
+ 
+                                                         TriggerClientEvent("unlockVehicle", source, netId)
+                                                         TriggerClientEvent("vrp_sounds:source", source, "lock", 0.1)
+                                                         TriggerClientEvent("Notify", source, "negado", "Você destrancou o veículo, cuidado a polícia foi acionada.", 6000)
+                                                         TriggerClientEvent("SetAsNoLongerOwned", -1, netId)
+ 
+                                                         
+                                                     else
+                                                         TriggerClientEvent("Notify", source, "negado", "Falha ao tentar destrancar o veículo.", 6000)
+                                                     end
+ 
+                                                 else
+                                                     TriggerClientEvent("Notify", source, "negado", "Falha ao tentar destrancar o veículo.", 6000)
+                                                 end
+ 
+                                             else
+                                                 TriggerClientEvent("Notify", source, "negado", "Falha ao tentar destrancar o veículo.", 6000)
+                                             end
+                                         else
+                                             TriggerClientEvent("Notify", source, "negado", "Falha ao tentar destrancar o veículo.", 6000)
+                                         end
+ 
+                                         -- Finaliza a animação e desbloqueia os botões em qualquer caso
+                                         vRPclient._stopAnim(source, false)
+                                         vTunnel.blockButtons(source, false)
+                                     end
+                            
+                        
+ 
                                     
-                                    vTunnel.blockButtons(source, true)
-                                    local finished = vRPclient.taskBar(source, 2500, math.random(7, 15))
-                                    if finished then
-                                        local finished = vRPclient.taskBar(source, 1500, math.random(7, 15))
-                                        if finished then
-                                            local finished = vRPclient.taskBar(source, 1000, math.random(7, 15))
-                                            if finished then
-                                                local entity = NetworkGetEntityFromNetworkId(mNet)
-                                                if entity then
-                                                    SetVehicleDoorsLocked(entity,1)
-                                                end
-                                                TriggerClientEvent("vrp_sounds:source", source, "lock", 0.1)
-                                                TriggerClientEvent( "Notify", source, "negado", "Você destrancou o veiculo, cuidado a policia foi acionada.", 6000 )
-                                                vTunnel.blockButtons(source, false)
-                                                vRP.sendLog("LOCKPICK", "**SUCESSO** O [ID: " .. user_id .. "] Roubou o veiculo " .. mModel .. "(ID:" .. plateUser .. ") nas nas cordenadas: " .. x .. "," .. y .. "," .. z )
-                                            end
-                                        end
-                                    end
-
-                                elseif item == "pedecabra" then
-                                    local plate, mName, mNet, mPortaMalas, mPrice, mLock, mModel = vRPclient.ModelName(source, 7)
-                                    local plateUser = vRP.getUserByRegistration(plate)
-                                    local plyCoords = GetEntityCoords(GetPlayerPed(source))
-                                    local x, y, z = plyCoords[1], plyCoords[2], plyCoords[3]
-                                
-                                    if plateUser then
-                                        if vRP.tryGetInventoryItem(user_id, "pedecabra", 1, true, slot) then
-                                            TriggerClientEvent('closeInventory', source)
-                                            Wait(500)
-                                            vTunnel._startAnimHotwired(source)
-                                            vTunnel.blockButtons(source, true)
-                                
-                                            local finished = vRPclient.taskBar(source, 2500, math.random(7, 15))
-                                            if finished then
-                                                finished = vRPclient.taskBar(source, 1500, math.random(7, 15))
-                                                if finished then
-                                                    finished = vRPclient.taskBar(source, 1000, math.random(7, 15))
-                                                    if finished then
-                                                        local entity = NetworkGetEntityFromNetworkId(mNet)
-                                                        if entity then
-                                                            SetVehicleDoorsLocked(entity, 1)
-                                                        end
-                                                        TriggerClientEvent("vrp_sounds:source", source, "lock", 0.1)
-                                                        TriggerClientEvent("Notify", source, "negado", "Você destrancou o porta-malas, cuidado a policia foi acionada.", 6000)
-                                                        vTunnel.blockButtons(source, false)
-                                                        vRP.sendLog("LOCKPICK", "**SUCESSO** O [ID: " .. user_id .. "] Roubou o porta-malas " .. mModel .. "(ID:" .. plateUser .. ") nas nas cordenadas: " .. x .. "," .. y .. "," .. z)
-                                                    end
-                                                end
-                                            end
-                                            exports['vrp']:alertPolice({
-                                                x = x,
-                                                y = y,
-                                                z = z,
-                                                blipID = 161,
-                                                blipColor = 63,
-                                                blipScale = 0.5,
-                                                time = 20,
-                                                code = "911",
-                                                title = "Veiculo Roubado (" .. mModel .. ")",
-                                                name = "Um novo registro de tentativa de roubo de veiculo, Modelo: " .. mModel .. " Placa: " .. plate .. ". "
-                                            })
-                                            vRPclient._stopAnim(source, true)
-                                            vTunnel._updateInventory(source, "updateMochila")
-                                        end
-                                    else
-                                        vTunnel.blockButtons(source, false)
-                                        TriggerClientEvent("Notify", source, "negado", "Este veiculo não pode ser roubado.", 6000)
-                                        TriggerClientEvent('closeInventory', source)
-                                    end
-                                
-        
-
-                                    exports['vrp']:alertPolice({x = x,y = y,z = z,blipID = 161,blipColor = 63,blipScale = 0.5,time = 20,code = "911",title = "Veiculo Roubado (" .. mModel .. ")",name = "Um novo registro de tentativa de roubo de veiculo, Modelo: " ..	mModel .. " Placa: " .. plate .. ". "})
-                                    vRPclient._stopAnim(source, true)
-                                    vTunnel._updateInventory(source, "updateMochila")
-                                end
-                            else
-                                vTunnel.blockButtons(source, false)
-                                TriggerClientEvent("Notify", source, "negado", "Este veiculo já está destracando.",6000)
-                                TriggerClientEvent('closeInventory', source)
-                            end
-                        else
-                            vTunnel.blockButtons(source, false)
-                            TriggerClientEvent("Notify", source, "negado", "Este veiculo não pode ser roubado.",6000)
-                            TriggerClientEvent('closeInventory', source)
-                        end
-
-
-                    elseif item == "repairkit" then
-                        if not vRPclient.isInVehicle(source) then
-                            local vehicle = vRPclient.getNearestVehicle(source, 5000)
-                            if vehicle then
-                                if vRP.tryGetInventoryItem(user_id, "repairkit", 1, true, slot) or vRP.hasPermission(user_id, "perm.mecanica") then
-                                    func:setBlockCommand(user_id, 10)
-                                    vTunnel.blockButtons(source, true)
-                                    vRPclient._playAnim(source, false, { { "mini@repair", "fixing_a_player" } }, true)
-                                    TriggerClientEvent("progress", source, 10000)
-                                    SetTimeout(10000, function()
-                                        TriggerClientEvent("reparar", source, vehicle)
-                                        vTunnel.blockButtons(source, false)
-                                        TriggerClientEvent("Notify", source, "sucesso", "Você reparou o veiculo.", 5000)
-                                        vRPclient._stopAnim(source, false) 
-                                    end)
-                                    return { success = "Veiculo reparado com sucesso." }
-                                end
-                            else
-                                TriggerClientEvent('Notify', source, 'aviso', 'Você Precisa estar Perto do Veiculo',5000)
-                                vTunnel.blockButtons(source, false)
-                                return { error = "Você precisa estar perto do veículo." }
-                            end
-                        else
-                            TriggerClientEvent("Notify", source, "negado","Precisa estar próximo ou fora do veículo para efetuar os reparos.", 5000)
-                            vTunnel.blockButtons(source, false)
-                            return { error = "fique fora do veiculo para reparar." }
-                        end
-
-                    elseif item == "repairkit2" then
-                            if not vRPclient.isInVehicle(source) then
-                                local vehicle = vRPclient.getNearestVehicle(source, 5000)
-                                if vehicle then
-                                    if vRP.tryGetInventoryItem(user_id, "repairkit2", 1, true, slot) or vRP.hasPermission(user_id, "perm.mecanica") then
-                                        func:setBlockCommand(user_id, 10)
-                                        vTunnel.blockButtons(source, true)
-                                        vRPclient._playAnim(source, false, { { "mini@repair", "fixing_a_player" } }, true)
-                                        TriggerClientEvent("progress", source, 10000)
-                                        SetTimeout(10000, function()
-                                            TriggerClientEvent("repararMotor", source, vehicle) -- Assumindo um evento específico para reparar o motor
-                                            vTunnel.blockButtons(source, false)
-                                            TriggerClientEvent("Notify", source, "sucesso", "Você reparou o motor do veículo.", 5000)
-                                            vRPclient._stopAnim(source, false) 
-                                        end)
-                                        return { success = "Motor reparado com sucesso." }
-                                    end
-                                else
-                                    TriggerClientEvent('Notify', source, 'aviso', 'Você precisa estar perto do veículo.', 5000)
-                                    vTunnel.blockButtons(source, false)
-                                    return { error = "Você precisa estar perto do veículo." }
-                                end
-                            else
-                                TriggerClientEvent("Notify", source, "negado", "Precisa estar próximo ou fora do veículo para efetuar os reparos.", 5000)
-                                vTunnel.blockButtons(source, false)
-                                return { error = "Fique fora do veículo para reparar o motor." }
-                            end
-
-                    elseif item == "pneus" then
+                                     -- Finaliza a animação e desbloqueia os botões em qualquer caso
+                                     vRPclient._stopAnim(source, false)
+                                     vTunnel.blockButtons(source, false)
+                                 else
+                                     print("❌ Nenhum dono encontrado para a placa:", plate)
+                                     TriggerClientEvent("Notify", source, "negado", "Este veículo não está registrado.", 6000)
+                                 end
+                             end)
+ 
+                             alreadyRegistered = true
+                         end
+ 
+                         -- Pegando informações do veículo mais próximo quando a lockpick for usada
+                         TriggerClientEvent("getNearestVehicleInfo", source)
+ 
+                         return { success = "Lockpick em uso." }
+ 
+                     elseif item == "repairkit" then
+                         if not vRPclient.isInVehicle(source) then
+                             local vehicle = vRPclient.getNearestVehicle(source, 5000)
+                             if vehicle then
+                                 if vRP.tryGetInventoryItem(user_id, "repairkit", 1, true, slot) or vRP.hasPermission(user_id, "perm.mecanica") then
+                                     TriggerClientEvent('closeInventory', source)
+                                     func:setBlockCommand(user_id, 10)
+                                     vTunnel.blockButtons(source, true)
+                                     vRPclient._playAnim(source, false, { { "mini@repair", "fixing_a_player" } }, true)
+                                     TriggerClientEvent("progress", source, 10000)
+                                     SetTimeout(10000, function()
+                                         TriggerClientEvent("reparar", source, vehicle)
+                                         vTunnel.blockButtons(source, false)
+                                         TriggerClientEvent("Notify", source, "sucesso", "Você reparou o veiculo.", 5000)
+                                         vRPclient._stopAnim(source, false) 
+                                     end)
+                                     return { success = "Veiculo reparado com sucesso." }
+                                 end
+                             else
+                                 TriggerClientEvent('Notify', source, 'aviso', 'Você Precisa estar Perto do Veiculo',5000)
+                                 vTunnel.blockButtons(source, false)
+                                 return { error = "Você precisa estar perto do veículo." }
+                             end
+                         else
+                             TriggerClientEvent("Notify", source, "negado","Precisa estar próximo ou fora do veículo para efetuar os reparos.", 5000)
+                             vTunnel.blockButtons(source, false)
+                             return { error = "fique fora do veiculo para reparar." }
+                         end
+ 
+                     elseif item == "militec" then
+                             if not vRPclient.isInVehicle(source) then
+                                 local vehicle = vRPclient.getNearestVehicle(source, 5000)
+                                 if vehicle then
+                                     if vRP.tryGetInventoryItem(user_id, "militec", 1, true, slot) or vRP.hasPermission(user_id, "perm.mecanica") then
+                                         TriggerClientEvent('closeInventory', source)
+                                         func:setBlockCommand(user_id, 10)
+                                         vTunnel.blockButtons(source, true)
+                                         vRPclient._playAnim(source, false, { { "mini@repair", "fixing_a_player" } }, true)
+                                         TriggerClientEvent("progress", source, 10000)
+                                         SetTimeout(10000, function()
+                                             TriggerClientEvent("repararMotor", source, vehicle) -- Assumindo um evento específico para reparar o motor
+                                             vTunnel.blockButtons(source, false)
+                                             TriggerClientEvent("Notify", source, "sucesso", "Você reparou o motor do veículo.", 5000)
+                                             vRPclient._stopAnim(source, false) 
+                                         end)
+                                         return { success = "Motor reparado com sucesso." }
+                                     end
+                                 else
+                                     TriggerClientEvent('Notify', source, 'aviso', 'Você precisa estar perto do veículo.', 5000)
+                                     vTunnel.blockButtons(source, false)
+                                     return { error = "Você precisa estar perto do veículo." }
+                                 end
+                             else
+                                 TriggerClientEvent("Notify", source, "negado", "Precisa estar próximo ou fora do veículo para efetuar os reparos.", 5000)
+                                 vTunnel.blockButtons(source, false)
+                                 return { error = "Fique fora do veículo para reparar o motor." }
+                             end
+ 
+                     elseif item == "pneus" then
                         if not vRPclient.isInVehicle(source) then
                             local vehicle = vRPclient.getNearestVehicle(source, 5000)
                             if vehicle then
@@ -917,6 +934,28 @@ RegisterTunnel.useItem = function(slot, amount)
                                 end)
                                 return { success = "Você usou a bandagem." }
                             end
+                        elseif item == "burflex" then
+                    
+                            if vRP.tryGetInventoryItem(user_id, item, 1, true, slot) then
+                                TriggerClientEvent('closeInventory', source)
+                                vTunnel.SetInventoryBlocked(source, 50000000)
+                                func:setBlockCommand(user_id, 10)
+                                vTunnel.blockButtons(source, true)
+                                -- Carrega a animação e o objeto para simular a ingestão do burflex
+                                vRPclient._CarregarObjeto(source, "mp_player_intdrink", "loop_bottle", "prop_cs_pills", 49, 60309)
+                                TriggerClientEvent("progress", source, 10000)
+                                SetTimeout(10000, function()
+                                    vTunnel.blockButtons(source, false)
+                                    vTunnel.SetInventoryBlocked(source, 0)
+                                    vRPclient._DeletarObjeto(source)
+                                    vTunnel._useBurflex(source)
+                                    
+                                    TriggerClientEvent("Notify", source, "aviso", "Você tomou o burflex. Sinta-se melhor!", 6000)
+                                end)
+                                return { success = "Você tomou o Burflex." }
+                            end
+                       
+                        
                         end
                     end
 

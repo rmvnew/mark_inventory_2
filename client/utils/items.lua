@@ -169,6 +169,66 @@ Citizen.CreateThread(function()
 	end
 end)
 
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+-- SISTEMA DE USAR BURFLEX
+-----------------------------------------------------------------------------------------------------------------------------------------
+local burflex = false
+local tempoBurflex = 30 -- Metade do tempo da bandagem (15 segundos, considerando 500ms por ciclo)
+local oldHealthBurflex = 0
+local burflexAcumulado = 0.0  -- Variável para acumular os pontos de cura fracionados
+
+function API.useBurflex()
+    burflex = true
+    tempoBurflex = 30
+    oldHealthBurflex = GetEntityHealth(PlayerPedId())
+    burflexAcumulado = 0.0
+end
+
+Citizen.CreateThread(function()
+    while true do
+        local ped = PlayerPedId()
+        local health = GetEntityHealth(ped)
+        local waitTime = 500 -- Intervalo de 500ms
+
+        if burflex then
+            -- Cancelamento se a vida já estiver cheia
+            if health >= 400 then
+                tempoBurflex = 0
+                burflex = false
+                TriggerEvent("Notify", "negado", "<b>Você Não Pode Utilizar o [BURFLEX]</b> Pois Sua Vida Está Cheia.", 4000)
+            -- Cancelamento se o tempo acabar
+            elseif tempoBurflex <= 0 then
+                tempoBurflex = 0
+                burflex = false
+                TriggerEvent("Notify", "negado", "<b>Seu Burflex acabou</b>", 5000)
+            -- Cancelamento se a saúde estiver muito baixa ou o jogador estiver morto
+            elseif health <= 101 then
+                tempoBurflex = 0
+                burflex = false
+                TriggerEvent("Notify", "negado", "O Burflex Foi Cancelado pois Você morreu.", 4000)
+            else
+                if health < 400 then
+                    -- Acumula a cura fracionada (70 pontos divididos por 25 ciclos ≈ 2,8 por ciclo)
+                    burflexAcumulado = burflexAcumulado + (70 / 25)
+                    local incremento = math.floor(burflexAcumulado)
+                    if incremento > 0 then
+                        SetEntityHealth(ped, math.min(health + incremento, 400))
+                        burflexAcumulado = burflexAcumulado - incremento
+                    end
+                end
+            end
+
+            -- Reduz o tempo do efeito e atualiza a saúde anterior
+            tempoBurflex = tempoBurflex - 1
+            oldHealthBurflex = health
+        end
+
+        Citizen.Wait(waitTime)
+    end
+end)
+
+
 -----------------------------------------------------------------------------------------------------------------------------------------
 -- REPAIRVEHICLE
 -----------------------------------------------------------------------------------------------------------------------------------------

@@ -864,6 +864,23 @@ Items = {
             end)
         end
     },
+    ["burflex"] = {
+        index = "burflex",
+        name = "Burflex",
+        weight = 0.1, 
+        func = function(user_id, source, item, slot, cb)
+            TriggerClientEvent('cancelando',source,true)
+            TriggerClientEvent("progress",source,5000,"remedio")
+            vRPc._CarregarObjeto(source,"mp_player_intdrink","loop_bottle","ng_proc_drug01a002",49,60309)
+
+            SetTimeout(5*1000, function()
+                TriggerClientEvent('cancelando',source,false)
+                vRPc._DeletarObjeto(source)
+                Remote._usePill(source)
+                TriggerClientEvent("Notify",source,"medico","<b>Remédio</b> utilizado com sucesso.",8000)
+            end)
+        end
+    },
     ["corvina"] = {
         index = "corvina",
         name = "Corvina",

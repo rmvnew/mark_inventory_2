@@ -8,9 +8,9 @@ Shops = {
 			["energetico"] = 5000,
 			["alianca"] = 500,
 			["roupas"] = 5000,
-			["repairkit2"] = 30000,
+			-- ["repairkit2"] = 30000,
 			["mochila"] = 10000,
-			["pneus"] = 100,
+			-- ["pneus"] = 100,
 			["celular"] = 2000,
 			["water"] = 5000,
 			["sprunk"] = 5000,
@@ -188,25 +188,26 @@ Shops = {
         mode = "buy",
         perm = nil,
         items = {
-			["pao"] = 50,
-			["sanduiche"] = 50,
-			["pizza"] = 50,
-			["barrac"] = 50,
-			["cachorroq"] = 50,
-			["pipoca"] = 50,
-			["donut"] = 50,
-			["paoq"] = 50,
-			["marmita"] = 50,
-			["coxinha"] = 50,
-			["cocacola"] = 50,
-			["sprunk"] = 50,
-			["sucol"] = 50,
-			["sucol2"] = 50,
-			["water"] = 50,
-			["cafe"] = 50
+			["pao"] = 200,
+			["sanduiche"] = 200,
+			["pizza"] = 200,
+			["barrac"] = 200,
+			["cachorroq"] = 200,
+			["pipoca"] = 200,
+			["donut"] = 200,
+			["paoq"] = 200,
+			["marmita"] = 200,
+			["coxinha"] = 200,
+			["cocacola"] = 200,
+			["sprunk"] = 200,
+			["sucol"] = 200,
+			["sucol2"] = 200,
+			["water"] = 200,
+			["cafe"] = 200
         },
         coords = {
-            vec3(-580.62,-885.27,26.0)
+            vec3(-1194.06,-892.68,13.88),
+            vec3(-583.31,-1060.44,22.34),
         },
     },
 
@@ -276,6 +277,20 @@ Shops = {
         },
         coords = {
             vec3(-1595.63,5206.5,4.31),
+			
+        },
+    },
+	["Mecanica"] = {
+        mode = "sell",
+        items = {
+            ['repairkit'] = 30000,
+            ['rastreador'] = 20000,
+			["pneus"] = 5000,
+            
+        },
+        coords = {
+            vec3(54.55,-1745.64,29.69),
+            vec3(955.71,-1044.3,40.84),
 			
         },
     },
