@@ -460,7 +460,43 @@ RegisterTunnel.useItem = function(slot, amount)
                 end
                 
                 if itemType == "usar" then
-                    if item == "mochila" then
+
+                    if item == "vale_carro" then
+                    
+                        local user_id = vRP.getUserId(source)
+                        if user_id then
+                            if vRP.tryGetInventoryItem(user_id, "vale_carro", 1, true, slot) then
+                                TriggerClientEvent('closeInventory', source)
+                                TriggerClientEvent("progress", source, 5000, "Resgatando veículo...")
+                                vTunnel.blockButtons(source, true)
+                                func:setBlockCommand(user_id, 5)
+                    
+                                SetTimeout(5000, function()
+                                    vTunnel.blockButtons(source, false)
+                    
+                                    -- Lógica para adicionar o carro à garagem
+                                    local veiculo = "boxville3"
+                                    local placa = vRP.gerarPlaca()
+                                    local ipva = os.time()
+                                    local expired = "{}"
+                    
+                                    vRP.execute("vRP/inserir_veh", {
+                                        veiculo = veiculo,
+                                        user_id = user_id,
+                                        placa = placa,
+                                        ipva = ipva,
+                                        expired = expired
+                                    })
+                    
+                                    TriggerClientEvent("Notify", source, "sucesso", "Você resgatou um <b>"..veiculo.."</b>. Ele foi adicionado à sua garagem!", 6000)
+                                end)
+                                return { success = "Você resgatou um carro." }
+                            else
+                                TriggerClientEvent("Notify", source, "negado", "Você não tem um vale-carro para usar.", 6000)
+                            end
+                        end
+                    
+                    elseif item == "mochila" then
                         local maxMochila = {}
                         maxMochila[user_id] = 3
                         if vRP.tryGetInventoryItem(user_id, item, 1, true, slot) then
@@ -1820,107 +1856,257 @@ end)
 
 local openedRevistar = {}
 
+
+
+
+-- RegisterCommand('revistar', function(source, args)
+--     local user_id = vRP.getUserId(source)
+--     local nplayer = vRPclient.getNearestPlayer(source, 5)
+
+--     if not nplayer then
+--         TriggerClientEvent('Notify', source, "negado", "Nenhum jogador próximo.", 6000)
+--         return
+--     end
+
+--     local nuser_id = vRP.getUserId(nplayer)
+
+--     if not nuser_id then
+--         TriggerClientEvent('Notify', source, "negado", "Erro ao obter o ID do jogador.", 6000)
+--         return
+--     end
+
+--     if vRPclient.getHealth(source) <= 101 or vRPclient.isHandcuffed(source) then
+--         TriggerClientEvent('Notify', source, "negado", "Você não pode revistar agora.", 6000)
+--         return
+--     end
+
+--     if vTunnel.inVehicle(source) then
+--         TriggerClientEvent('Notify', source, "negado", "Você não pode revistar dentro do veículo.", 6000)
+--         return
+--     end
+
+--     if vRP.hasPermission(nuser_id, 'perm.policia') then
+--         TriggerClientEvent('Notify', source, "negado", "Você não pode revistar um policial.", 6000)
+--         return
+--     end
+
+--     -- Verifica se o jogador aceitou ser revistado ou se está inconsciente
+--     local request = false
+--     if vRPclient.getHealth(nplayer) <= 101 then
+--         request = true
+--         vRPclient._playAnim(source, false, {{"amb@medic@standing@tendtodead@idle_a", "idle_a"}}, true)
+--         TriggerClientEvent('Notify', nplayer, "negado", "Você está sendo revistado.")
+--     else
+--         request = vRP.request(nplayer, 'Você aceita ser revistado?', 15)
+--     end
+
+--     if request then
+--         -- Obter identidade do jogador revistado
+--         local identity = vRP.getUserIdentity(nuser_id)
+--         local name = identity.nome .. " " .. identity.sobrenome
+
+--         -- Inventário do policial (quem está revistando)
+--         local myInventory = {}
+--         local myweight = 0.0
+--         local inv = vRP.getInventory(user_id)
+
+--         if inv then
+--             for k, v in pairs(inv) do
+--                 if Items[v["item"]] then
+--                     v["amount"] = parseInt(v["amount"])
+--                     v["name"] = Items[v["item"]].name
+--                     v["peso"] = Items[v["item"]].weight
+--                     v["index"] = v["item"]
+--                     v["key"] = v["item"]
+--                     v["slot"] = k
+
+--                     myInventory[k] = v
+--                     myweight = myweight + (Items[v["item"]].weight * parseInt(v["amount"]))
+--                 end
+--             end
+--         end
+
+--         -- Inventário do jogador revistado
+--         local targetInventory = {}
+--         local targetWeight = 0.0
+--         local inv2 = vRP.getInventory(nuser_id)
+
+--         if inv2 then
+--             for k, v in pairs(inv2) do
+--                 if Items[v["item"]] then
+--                     v["amount"] = parseInt(v["amount"])
+--                     v["name"] = Items[v["item"]].name
+--                     v["peso"] = Items[v["item"]].weight
+--                     v["index"] = v["item"]
+--                     v["key"] = v["item"]
+--                     v["slot"] = k
+
+--                     targetInventory[k] = v
+--                     targetWeight = targetWeight + (Items[v["item"]].weight * parseInt(v["amount"]))
+--                 end
+--             end
+--         end
+
+--         -- Transferência de armas do jogador revistado para o inventário
+--         local weapons = vRPclient.replaceWeapons(nplayer, {})
+--         for k, v in pairs(weapons) do
+--             vRP.giveInventoryItem(nuser_id, k, 1, true)
+--             if v.ammo > 0 then
+--                 local ammoItem = string.gsub(k, "WEAPON_", "AMMO_")
+--                 vRP.giveInventoryItem(nuser_id, ammoItem, v.ammo, true)
+--             end
+--         end
+
+--         -- Bloqueia comandos e abre a interface de revista
+--         vTunnel.SetInventoryBlocked(nplayer, 500000000000)
+--         func:setBlockCommand(nuser_id, 100000000000)
+--         func:setBlockCommand(source, 100000000000)
+
+--         openedRevistar[user_id] = nuser_id
+--         vTunnel.openInspect(source, {
+--             source = {inventory = myInventory, weight = myweight, max_weight = vRP.getInventoryMaxWeight(user_id)},
+--             target = {inventory = targetInventory, weight = targetWeight, max_weight = vRP.getInventoryMaxWeight(nuser_id), target_name = name}
+--         })
+
+--         TriggerClientEvent('Notify', source, "sucesso", "Você está revistando.", 5000)
+--         TriggerClientEvent('Notify', nplayer, "negado", "Você está sendo revistado.", 5000)
+
+--         -- Animações de revista
+--         if vRPclient.getHealth(nplayer) > 101 then
+--             vRPclient._playAnim(source, false, {{"misscarsteal4@director_grip", "end_loop_grip"}}, true)
+--             vRPclient._playAnim(nplayer, false, {{"random@mugging3", "handsup_standing_base"}}, true)
+--         end
+--     else
+--         TriggerClientEvent('Notify', source, "negado", "O player recusou seu pedido de revistar.", 5000)
+--     end
+-- end)
+
+
 RegisterCommand('revistar', function(source, args)
-    local source = source
     local user_id = vRP.getUserId(source)
     local nplayer = vRPclient.getNearestPlayer(source, 5)
+
+    if not nplayer then
+        TriggerClientEvent('Notify', source, "negado", "Nenhum jogador próximo.", 6000)
+        return
+    end
+
     local nuser_id = vRP.getUserId(nplayer)
-    
-    if vRPclient.getHealth(source) <= 101 or vRPclient.isHandcuffed(source) or arena.inArena(source) then
-        TriggerClientEvent('Notify', source, "negado", "Você não pode revistar agora.",6000)
+
+    if not nuser_id then
+        TriggerClientEvent('Notify', source, "negado", "Erro ao obter o ID do jogador.", 6000)
         return
     end
 
-    
+    if vRPclient.getHealth(source) <= 101 or vRPclient.isHandcuffed(source) then
+        TriggerClientEvent('Notify', source, "negado", "Você não pode revistar agora.", 6000)
+        return
+    end
+
     if vTunnel.inVehicle(source) then
-        TriggerClientEvent('Notify', source, "negado", "Você não pode revistar dentro do veiculo.",6000)
+        TriggerClientEvent('Notify', source, "negado", "Você não pode revistar dentro do veículo.", 6000)
         return
     end
 
-    if user_id then
-        local nuser_id = vRP.getUserId(nplayer)
-        if vRP.hasPermission(nuser_id, 'perm.policia') then
-            TriggerClientEvent('Notify', source, "negado", "Você não pode revistar um policial.",6000)
-            return
-        end
-        local request = false
-        if vRPclient.getHealth(nplayer) <= 101 then
-            request = true
-           vRPclient._playAnim( source, false, {{"amb@medic@standing@tendtodead@idle_a", "idle_a"}}, true )
-            TriggerClientEvent('Notify', nplayer, "negado", "Você está sendo revistado.")
-        elseif vRP.hasPermission(user_id, 'perm.disparo') then
-            request = true
-        else
-            request = vRP.request(nplayer, 'Você aceita ser revistado?', 15)
-        end
-        if request then
-            if nplayer and nuser_id then
-                local identity = vRP.getUserIdentity(nuser_id)
-                local name = identity.nome .. " " .. identity.sobrenome
-                local inv = vRP.getInventory(user_id)
-                local myInventory = {}
-                local myweight = 0.0
-                if inv then
-                    for k, v in pairs(inv) do
-                        if Items[v["item"]] then
-                            v["amount"] = parseInt(v["amount"])
-                            v["name"] = Items[v["item"]].name
-                            v["peso"] = Items[v["item"]].weight
-                            v["index"] = v["item"]
-                            v["key"] = v["item"]
-                            v["slot"] = k
+    -- Verifica se o jogador revistado é policial (mas continua permitindo a revista)
+    if vRP.hasPermission(nuser_id, 'perm.policia') then
+        TriggerClientEvent('Notify', source, "negado", "Você não pode revistar um policial.", 6000)
+        return
+    end
 
-                            myInventory[k] = v
-                            myweight = myweight + (Items[v["item"]].weight * parseInt(v["amount"]))
-                        end
-                    end
+    -- Verifica se a revista deve ser automática
+    local request = false
+    if vRPclient.getHealth(nplayer) <= 101 or vRPclient.isHandcuffed(nplayer) or vRP.hasPermission(user_id, "perm.policia") then
+        request = true
+        vRPclient._playAnim(source, false, {{"amb@medic@standing@tendtodead@idle_a", "idle_a"}}, true)
+        TriggerClientEvent('Notify', nplayer, "negado", "Você está sendo revistado.")
+    else
+        request = vRP.request(nplayer, 'Você aceita ser revistado?', 15)
+    end
+
+    if request then
+        -- Obter identidade do jogador revistado
+        local identity = vRP.getUserIdentity(nuser_id)
+        local name = identity.nome .. " " .. identity.sobrenome
+
+        -- Inventário do policial (quem está revistando)
+        local myInventory = {}
+        local myweight = 0.0
+        local inv = vRP.getInventory(user_id)
+
+        if inv then
+            for k, v in pairs(inv) do
+                if Items[v["item"]] then
+                    v["amount"] = parseInt(v["amount"])
+                    v["name"] = Items[v["item"]].name
+                    v["peso"] = Items[v["item"]].weight
+                    v["index"] = v["item"]
+                    v["key"] = v["item"]
+                    v["slot"] = k
+
+                    myInventory[k] = v
+                    myweight = myweight + (Items[v["item"]].weight * parseInt(v["amount"]))
                 end
-
-                local weapons = vRPclient.replaceWeapons(nplayer, {})
-                for k, v in pairs(weapons) do
-                    vRP.giveInventoryItem(nuser_id, k, 1, true)
-                    if v.ammo > 0 then
-                        local weapon = string.gsub(k, "WEAPON_", "AMMO_")
-                        vRP.giveInventoryItem(nuser_id, weapon, v.ammo, true)
-                    end
-                end
-
-                local inv2 = vRP.getInventory(nuser_id)
-                local myHouseChest = {}
-                local weight = 0.0
-
-                for k, v in pairs(inv2) do
-                    if Items[v["item"]] then
-                        v["amount"] = parseInt(v["amount"])
-                        v["name"] = Items[v["item"]].name
-                        v["peso"] = Items[v["item"]].weight
-                        v["index"] = v["item"]
-                        v["key"] = v["item"]
-                        v["slot"] = k
-                        myHouseChest[k] = v
-                        weight = weight + (Items[v["item"]].weight * parseInt(v["amount"]))
-                    end
-                end
-
-                vTunnel.SetInventoryBlocked(nplayer, 500000000000)
-                func:setBlockCommand(nuser_id, 100000000000)
-                func:setBlockCommand(source, 100000000000)
-                openedRevistar[user_id] = nuser_id
-                vTunnel.openInspect(source,{source = {inventory = myInventory,weight = myweight,max_weight = vRP.getInventoryMaxWeight(user_id)},target = {inventory = myHouseChest,weight = weight,max_weight = vRP.getInventoryMaxWeight(nuser_id),target_name = name}})
-                TriggerClientEvent('Notify', source, "sucesso", "Você está revistando.",5000)
-                TriggerClientEvent('Notify', nplayer, "negado", "Você está sendo revistado.",5000)
-                if vRPclient.getHealth(nplayer) > 101 then
-                    vRPclient._playAnim(source, false, {{"misscarsteal4@director_grip", "end_loop_grip"}}, true)
-                    vRPclient._playAnim(nplayer, false, {{"random@mugging3", "handsup_standing_base"}}, true)
-                end
-            else
-                TriggerClientEvent('Notify', source, "negado", "Você não possui nenhum player proximo.",5000)
             end
-        else
-            TriggerClientEvent('Notify', source, "negado", "O player recusou seu pedido de revistar.",5000)
         end
+
+        -- Inventário do jogador revistado
+        local targetInventory = {}
+        local targetWeight = 0.0
+        local inv2 = vRP.getInventory(nuser_id)
+
+        if inv2 then
+            for k, v in pairs(inv2) do
+                if Items[v["item"]] then
+                    v["amount"] = parseInt(v["amount"])
+                    v["name"] = Items[v["item"]].name
+                    v["peso"] = Items[v["item"]].weight
+                    v["index"] = v["item"]
+                    v["key"] = v["item"]
+                    v["slot"] = k
+
+                    targetInventory[k] = v
+                    targetWeight = targetWeight + (Items[v["item"]].weight * parseInt(v["amount"]))
+                end
+            end
+        end
+
+        -- Transferência de armas do jogador revistado para o inventário
+        local weapons = vRPclient.replaceWeapons(nplayer, {})
+        for k, v in pairs(weapons) do
+            vRP.giveInventoryItem(nuser_id, k, 1, true)
+            if v.ammo > 0 then
+                local ammoItem = string.gsub(k, "WEAPON_", "AMMO_")
+                vRP.giveInventoryItem(nuser_id, ammoItem, v.ammo, true)
+            end
+        end
+
+        -- Bloqueia comandos e abre a interface de revista
+        vTunnel.SetInventoryBlocked(nplayer, 500000000000)
+        func:setBlockCommand(nuser_id, 100000000000)
+        func:setBlockCommand(source, 100000000000)
+
+        openedRevistar[user_id] = nuser_id
+        vTunnel.openInspect(source, {
+            source = {inventory = myInventory, weight = myweight, max_weight = vRP.getInventoryMaxWeight(user_id)},
+            target = {inventory = targetInventory, weight = targetWeight, max_weight = vRP.getInventoryMaxWeight(nuser_id), target_name = name}
+        })
+
+        TriggerClientEvent('Notify', source, "sucesso", "Você está revistando.", 5000)
+        TriggerClientEvent('Notify', nplayer, "negado", "Você está sendo revistado.", 5000)
+
+        -- Animações de revista
+        if vRPclient.getHealth(nplayer) > 101 then
+            vRPclient._playAnim(source, false, {{"misscarsteal4@director_grip", "end_loop_grip"}}, true)
+            vRPclient._playAnim(nplayer, false, {{"random@mugging3", "handsup_standing_base"}}, true)
+        end
+    else
+        TriggerClientEvent('Notify', source, "negado", "O player recusou seu pedido de revistar.", 5000)
     end
 end)
+
+
+
 
 RegisterTunnel.emitCloseListeners = function()
     local source = source
